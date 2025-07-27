@@ -29,10 +29,10 @@ public class MonoplaneRenderer extends EntityRenderer<MonoplaneEntity> {
         matrixStack.scale(1.0F, -1.0F, -1.0F);
         matrixStack.translate(0.0F, -1.5F, 0.0F);
 
-        // Rotate model to match entity rotation
-        matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(f));
-//        matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(planeEntity.getPitch()));
-//        matrixStack.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(planeEntity.getRoll()));
+        // Rotate model to match entity rotation (in proper aircraft order: Yaw, Pitch, Roll)
+        matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(planeEntity.getYaw()));
+        matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(planeEntity.getPitch())); // Fixed: removed negative
+        matrixStack.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(-planeEntity.getRoll())); // Fixed: added negative for roll
 
         // Other stuff
         VertexConsumer vertexConsumer = vertexConsumerProvider.getBuffer(this.model.getLayer(this.getTexture(planeEntity)));

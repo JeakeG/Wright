@@ -3,7 +3,6 @@ package net.jeake.wright.entity.custom;
 import net.jeake.wright.item.custom.MonoplaneItem;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.data.DataTracker;
 import net.minecraft.item.Item;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.math.Vec3d;

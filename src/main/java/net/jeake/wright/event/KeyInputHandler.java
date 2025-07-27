@@ -19,6 +19,8 @@ public class KeyInputHandler {
     public static final String KEY_ROLL_RIGHT = "key.wrightmod.roll_right";
     public static final String KEY_PITCH_UP = "key.wrightmod.pitch_up";
     public static final String KEY_PITCH_DOWN = "key.wrightmod.pitch_down";
+    public static final String KEY_YAW_LEFT = "key.wrightmod.yaw_left";
+    public static final String KEY_YAW_RIGHT = "key.wrightmod.yaw_right";
 
     public static KeyBinding throttleUpKey;
     public static KeyBinding throttleDownKey;
@@ -26,43 +28,11 @@ public class KeyInputHandler {
     public static KeyBinding rollRightKey;
     public static KeyBinding pitchUpKey;
     public static KeyBinding pitchDownKey;
+    public static KeyBinding yawLeftKey;
+    public static KeyBinding yawRightKey;
 
     public static void registerKeyInputs() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-//            if (throttleUpKey.wasPressed()) {
-//                // Handle throttle up key press
-//                assert client.player != null;
-//                client.player.sendMessage(Text.of("Throttle Up Pressed"));
-//                ThrottleC2SPayload payload = new ThrottleC2SPayload(true);
-//                ClientPlayNetworking.send(payload);
-//            }
-//            if (throttleDownKey.wasPressed()) {
-//                // Handle throttle down key press
-//                assert client.player != null;
-//                client.player.sendMessage(Text.of("Throttle Down Pressed"));
-//                ThrottleC2SPayload payload = new ThrottleC2SPayload(false);
-//                ClientPlayNetworking.send(payload);
-//            }
-//            if (rollLeftKey.wasPressed()) {
-//                // Handle roll left key press
-//                assert client.player != null;
-//                client.player.sendMessage(Text.of("Roll Left Pressed"));
-//            }
-//            if (rollRightKey.wasPressed()) {
-//                // Handle roll right key press
-//                assert client.player != null;
-//                client.player.sendMessage(Text.of("Roll Right Pressed"));
-//            }
-//            if (pitchUpKey.wasPressed()) {
-//                // Handle pitch up key press
-//                assert client.player != null;
-//                client.player.sendMessage(Text.of("Pitch Up Pressed"));
-//            }
-//            if (pitchDownKey.wasPressed()) {
-//                // Handle pitch down key press
-//                assert client.player != null;
-//                client.player.sendMessage(Text.of("Pitch Down Pressed"));
-//            }
         });
     }
 
@@ -106,6 +76,20 @@ public class KeyInputHandler {
                 KEY_PITCH_DOWN,
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_KP_8,
+                KEY_CATEGORY_WRIGHT
+        ));
+
+        yawLeftKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                KEY_YAW_LEFT,
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_KP_1,
+                KEY_CATEGORY_WRIGHT
+        ));
+
+        yawRightKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                KEY_YAW_RIGHT,
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_KP_3,
                 KEY_CATEGORY_WRIGHT
         ));
 

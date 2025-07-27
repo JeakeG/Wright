@@ -7,7 +7,7 @@
     "WrightMixin"
   ],
   "client": [
-    "EntitySpawnMixin"
+    "CameraMixin"
   ],
   "injectors": {
     "defaultRequire": 1
