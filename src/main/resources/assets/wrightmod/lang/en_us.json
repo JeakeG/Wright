@@ -1,0 +1,17 @@
+{
+  "item.wrightmod.pink_garnet": "Pink Garnet",
+  "item.wrightmod.monoplane" : "Monoplane",
+
+  "block.wrightmod.pink_garnet_block": "Block of Pink Garnet",
+
+  "itemgroup.wrightmod.wrightmod_items": "Wright Mod Items",
+  "itemgroup.wrightmod.pink_garnet_blocks": "Pink Garnet Blocks",
+
+  "key.category.wrightmod.plane_controls": "Plane Controls",
+  "key.wrightmod.throttle_up": "Throttle Up",
+  "key.wrightmod.throttle_down": "Throttle Down",
+  "key.wrightmod.roll_left": "Roll Left",
+  "key.wrightmod.roll_right": "Roll Right",
+  "key.wrightmod.pitch_up": "Pitch Up",
+  "key.wrightmod.pitch_down": "Pitch Down"
+}

@@ -1,0 +1,27 @@
+{
+    "folders": [
+        {
+            "name": "Wright",
+            "path": "."
+        }
+    ],
+    "settings": {
+        "java.configuration.updateBuildConfiguration": "interactive",
+        "java.import.gradle.enabled": true,
+        "java.import.gradle.wrapper.enabled": true,
+        "files.exclude": {
+            "**/.gradle": true,
+            "**/build": false,
+            "**/.idea": true
+        }
+    },
+    "extensions": {
+        "recommendations": [
+            "redhat.java",
+            "vscjava.vscode-java-debug",
+            "vscjava.vscode-java-test",
+            "vscjava.vscode-java-dependency",
+            "vscjava.vscode-gradle"
+        ]
+    }
+}

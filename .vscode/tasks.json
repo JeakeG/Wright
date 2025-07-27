@@ -1,0 +1,120 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Mod",
+            "type": "shell",
+            "command": ".\\gradlew.bat",
+            "args": ["build"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": ["$gradle"]
+        },
+        {
+            "label": "Clean Build",
+            "type": "shell",
+            "command": ".\\gradlew.bat",
+            "args": ["clean", "build"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": ["$gradle"]
+        },
+        {
+            "label": "Run Minecraft Client",
+            "type": "shell",
+            "command": ".\\gradlew.bat",
+            "args": ["runClient"],
+            "group": "build",
+            "isBackground": true,
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "dedicated",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Minecraft Server",
+            "type": "shell",
+            "command": ".\\gradlew.bat",
+            "args": ["runServer"],
+            "group": "build",
+            "isBackground": true,
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "dedicated",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Data Generation",
+            "type": "shell",
+            "command": ".\\gradlew.bat",
+            "args": ["runDatagen"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": ["$gradle"]
+        },
+        {
+            "label": "Generate Sources",
+            "type": "shell",
+            "command": ".\\gradlew.bat",
+            "args": ["genSources"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": ["$gradle"]
+        },
+        {
+            "label": "Debug Minecraft Client",
+            "type": "shell",
+            "command": ".\\gradlew.bat",
+            "args": ["runClient", "--debug-jvm"],
+            "group": "build",
+            "isBackground": true,
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "dedicated",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        }
+    ]
+}

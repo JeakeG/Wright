@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.jeake.wright.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "WrightMixin"
+  ],
+  "client": [
+    "EntitySpawnMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

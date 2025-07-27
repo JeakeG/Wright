@@ -1,0 +1,33 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.import.gradle.enabled": true,
+    "java.import.gradle.wrapper.enabled": true,
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.debug.settings.enableRunDebugCodeLens": true,
+    "java.debug.settings.hotCodeReplace": "auto",
+    "java.completion.enabled": true,
+    "java.format.enabled": true,
+    "java.saveActions.organizeImports": true,
+    "java.sources.organizeImports.threshold": 1,
+    "java.sources.organizeImports.staticThreshold": 1,
+    "java.project.referencedLibraries": [
+        "build/libs/*.jar"
+    ],
+    "java.project.sourcePaths": [
+        "src/main/java"
+    ],
+    "java.project.outputPath": "build/classes/java/main",
+    "files.exclude": {
+        "**/.gradle": true,
+        "**/build": false,
+        "**/.idea": true,
+        "**/run": false
+    },
+    "search.exclude": {
+        "**/build": true,
+        "**/.gradle": true,
+        "**/run/logs": true,
+        "**/run/crash-reports": true
+    },
+    "gradle.nestedProjects": true
+}

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "wrightmod",
+  "version": "${version}",
+  "name": "Wright",
+  "description": "A minecraft mod that adds all thing aerodynamic",
+  "authors": ["Jeake"],
+  "contact": {
+    "homepage": "https://jeake.net/",
+    "sources": "https://github.com/JeakeG/Wright"
+  },
+  "license": "MIT",
+  "icon": "assets/wrightmod/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-datagen": [
+      "net.jeake.wright.client.WrightDataGenerator"
+    ],
+    "client": [
+      "net.jeake.wright.client.WrightClient"
+    ],
+    "main": [
+      "net.jeake.wright.Wright"
+    ]
+  },
+  "mixins": [
+    "wrightmod.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  },
+  "accessWidener": "wrightmod.accesswidener"
+}
