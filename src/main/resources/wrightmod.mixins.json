@@ -4,10 +4,13 @@
   "package": "net.jeake.wright.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "WrightMixin"
+
   ],
   "client": [
-    "CameraMixin"
+    "GameRendererMixin",
+    "GameRendererArmMixin",
+    "LivingEntityRendererMixin",
+    "HeldItemRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

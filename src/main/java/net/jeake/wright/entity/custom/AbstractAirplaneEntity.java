@@ -3,6 +3,7 @@ package net.jeake.wright.entity.custom;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.jeake.wright.event.KeyInputHandler;
 import net.jeake.wright.networking.packet.PlaneSyncS2CPayload;
+import net.jeake.wright.util.MathUtil;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -31,8 +32,7 @@ public abstract class AbstractAirplaneEntity extends VehicleEntity {
     private float roll;
     private float yaw;
 
-    // Quaternion for aircraft orientation
-    private Quaternionf orientation = new Quaternionf();
+    private Quaternionf orientation;
 
     Vec3d currentPos;
     Vec3d lastPos;
@@ -43,8 +43,11 @@ public abstract class AbstractAirplaneEntity extends VehicleEntity {
     Vec3d currentVelocity;
     Vec3d lastVelocity;
 
-    Vec3d currentRotationVelocity;
-    Vec3d lastRotationVelocity;
+    // Visual smoothing for rotations - doesn't affect actual rotation mechanics
+    private float visualPitch = 0f;
+    private float visualRoll = 0f;
+    private float visualYaw = 0f;
+    private float rotationSmoothFactor = 0.2f; // How fast visual rotation catches up
 
     float throttle;
     float THROTTLE_INCREMENT = 0.05F;
@@ -65,8 +68,6 @@ public abstract class AbstractAirplaneEntity extends VehicleEntity {
         super(type, world);
         this.roll = 0f;
         this.currentVelocity = new Vec3d(0, 0, 0);
-        this.currentRotationVelocity = new Vec3d(0, 0, 0);
-        // Initialize quaternion with identity (no rotation)
         this.orientation = new Quaternionf();
     }
 
@@ -140,18 +141,32 @@ public abstract class AbstractAirplaneEntity extends VehicleEntity {
         return this.enginePower;
     }
 
+    public Quaternionf getOrientation() {
+        return this.orientation;
+    }
+
+    public void setOrientation(Quaternionf orientation) {
+        this.orientation = orientation;
+    }
+
     @Override
     public void updatePassengerPosition(Entity passenger, PositionUpdater positionUpdater) {
         super.updatePassengerPosition(passenger, positionUpdater);
         
-        // Camera is now free - no forced rotation following
+        // Make passenger follow aircraft rotation for immersive experience
+        if (passenger instanceof PlayerEntity) {
+            // Apply smooth visual rotations to the passenger
+            passenger.setYaw(this.getVisualYaw());
+            passenger.setPitch(this.getVisualPitch());
+            // Note: Roll is handled visually in the renderer, players don't have roll rotation
+        }
     }
 
     @Override
     public void tick() {
         // Initialize quaternion from current angles on first tick
         if (this.age == 1) {
-            this.updateQuaternionFromEulerAngles();
+            this.setOrientation(MathUtil.euler2Quaternion(this.getAngles()));
         }
         
         // Handle inputs
@@ -185,7 +200,6 @@ public abstract class AbstractAirplaneEntity extends VehicleEntity {
                 }
             }
             this.move(MovementType.SELF, this.getVelocity());
-            this.rotate(this.getRotationVelocity());
         }
 
         super.tick();
@@ -214,33 +228,30 @@ public abstract class AbstractAirplaneEntity extends VehicleEntity {
     }
 
     private void syncVisualRotation() {
-        // Update the entity's visual rotation to match flight physics
-        // The yaw is already being set correctly, but we need to handle pitch and roll
+        // Smoothly interpolate visual rotation towards actual rotation
+        // Use lerpAngleDegrees for all rotations to handle 360° wrapping properly
+        this.visualPitch = MathHelper.lerpAngleDegrees(rotationSmoothFactor, this.visualPitch, this.getPitch());
+        this.visualRoll = MathHelper.lerpAngleDegrees(rotationSmoothFactor, this.visualRoll, this.getRoll());
+        this.visualYaw = MathHelper.lerpAngleDegrees(rotationSmoothFactor, this.visualYaw, this.getYaw());
         
-        // Update the entity's pitch to match our custom pitch
-        super.setPitch(this.getPitch());
-        
-        // For roll, we'll need to handle this in the renderer since Minecraft entities don't natively support roll
-        // The roll value is already accessible via getRoll() for the renderer to use
-        
-        // Update yaw (this should already be working)
-        super.setYaw(this.getYaw());
+        // Apply the smoothed visual rotation to the entity's display
+        super.setPitch(this.visualPitch);
+        super.setYaw(this.visualYaw);
+        // Note: Roll is handled in the renderer since Minecraft entities don't natively support roll
     }
-
-    private void setRotation(float pitch, float roll, float yaw) {
-        this.setPitch(pitch);
-        this.setRoll(roll);
-        this.setYaw(yaw);
+    
+    // Add getter for smooth visual roll for the renderer to use
+    public float getVisualRoll() {
+        return this.visualRoll;
     }
-
-    private void rotate(Vec3d rotationVelocity) {
-        this.setRotation(this.getPitch() + (float) rotationVelocity.x,
-                    this.getRoll() + (float) rotationVelocity.y,
-                    this.getYaw() + (float) rotationVelocity.z);
+    
+    // Add getters for smooth visual pitch and yaw for consistency
+    public float getVisualPitch() {
+        return this.visualPitch;
     }
-
-    private Vec3d getRotationVelocity() {
-        return this.currentRotationVelocity;
+    
+    public float getVisualYaw() {
+        return this.visualYaw;
     }
 
     @Override
@@ -310,6 +321,8 @@ public abstract class AbstractAirplaneEntity extends VehicleEntity {
         return this.throttle;
     }
 
+
+
     private void handleInputs() {
         // Throttle controls
         if (KeyInputHandler.throttleUpKey.isPressed()) {
@@ -357,57 +370,18 @@ public abstract class AbstractAirplaneEntity extends VehicleEntity {
         this.orientation = this.orientation.mul(yawRotation);
 
         // Update the Euler angles from the quaternion
-        this.updateEulerAnglesFromQuaternion();
+        float[] angles = MathUtil.quaternion2Euler(this.orientation);
+        this.setAngles(angles[0], angles[1], angles[2]);
     }
-    
-    private void updateEulerAnglesFromQuaternion() {
-        double qx = this.orientation.x;
-        double qy = this.orientation.y;
-        double qz = this.orientation.z;
-        double qw = this.orientation.w;
 
-        // Test for singularity
-        double test = qx * qy + qz * qw;
-        if (test > 0.499999) { // singularity at north pole
-            this.setYaw((float) Math.toDegrees(2 * Math.atan2(qx, qw)));
-            this.setPitch((float) Math.toDegrees(Math.PI / 2));
-            this.setRoll(0);
-        }
-        else if (test < -0.499999) { // singularity at south pole
-            this.setYaw((float) Math.toDegrees(-2 * Math.atan2(qx, qw)));
-            this.setPitch((float) Math.toDegrees(-Math.PI / 2));
-            this.setRoll(0);
-        } else {
-            double sqx = qx * qx;
-            double sqy = qy * qy;
-            double sqz = qz * qz;
-            this.setYaw((float) Math.toDegrees(Math.atan2(2 * qy * qw - 2 * qx * qz, 1 - 2 * sqy - 2 * sqz)));
-            this.setPitch((float) Math.toDegrees(Math.asin(2 * test)));
-            this.setRoll((float) Math.toDegrees(Math.atan2(2 * qx * qw - 2 * qy * qz, 1 - 2 * sqx - 2 * sqz)));
-        }
-        
+    private void setAngles(float yaw, float pitch, float roll) {
+        this.setYaw(yaw);
+        this.setPitch(pitch);
+        this.setRoll(roll);
     }
-    
-    private void updateQuaternionFromEulerAngles() {
-        // Convert degrees to radians
-        double rollRad = Math.toRadians(this.getRoll());
-        double pitchRad = Math.toRadians(this.getPitch());
-        double yawRad = Math.toRadians(this.getYaw());
-        
-        // Calculate quaternion components
-        float cy = (float) Math.cos(yawRad * 0.5);
-        float sy = (float) Math.sin(yawRad * 0.5);
-        float cp = (float) Math.cos(pitchRad * 0.5);
-        float sp = (float) Math.sin(pitchRad * 0.5);
-        float cr = (float) Math.cos(rollRad * 0.5);
-        float sr = (float) Math.sin(rollRad * 0.5);
-        
-        // Create quaternion from Euler angles
-        this.orientation = new Quaternionf(
-            cr * cp * cy + sr * sp * sy,
-            sr * cp * cy - cr * sp * sy,
-            cr * sp * cy + sr * cp * sy,
-            cr * cp * sy - sr * sp * cy
-        );
+
+    private float[] getAngles() {
+        return new float[]{this.getYaw(), this.getPitch(), this.getRoll()};
     }
+
 }
