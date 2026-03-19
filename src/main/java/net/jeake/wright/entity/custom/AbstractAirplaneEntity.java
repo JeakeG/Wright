@@ -43,10 +43,9 @@ public abstract class AbstractAirplaneEntity extends VehicleEntity {
     Vec3d currentVelocity;
     Vec3d lastVelocity;
 
-    // Visual smoothing for rotations - doesn't affect actual rotation mechanics
-    private float visualPitch = 0f;
-    private float visualRoll = 0f;
-    private float visualYaw = 0f;
+    // Quaternion-based visual smoothing — avoids Euler discontinuities during slerp
+    private Quaternionf smoothedOrientation = new Quaternionf();
+    private Quaternionf prevSmoothedOrientation = new Quaternionf();
     private float rotationSmoothFactor = 0.2f; // How fast visual rotation catches up
 
     float throttle;
@@ -153,20 +152,17 @@ public abstract class AbstractAirplaneEntity extends VehicleEntity {
     public void updatePassengerPosition(Entity passenger, PositionUpdater positionUpdater) {
         super.updatePassengerPosition(passenger, positionUpdater);
         
-        // Make passenger follow aircraft rotation for immersive experience
-        if (passenger instanceof PlayerEntity) {
-            // Apply smooth visual rotations to the passenger
-            passenger.setYaw(this.getVisualYaw());
-            passenger.setPitch(this.getVisualPitch());
-            // Note: Roll is handled visually in the renderer, players don't have roll rotation
-        }
+        // Camera yaw/pitch are handled in CameraMixin each frame using tickDelta.
+        // Setting them here (tick-rate, 20Hz) conflicted with mouse input, causing jitter.
     }
 
     @Override
     public void tick() {
-        // Initialize quaternion from current angles on first tick
+        // Initialize quaternions from current angles on first tick
         if (this.age == 1) {
             this.setOrientation(MathUtil.euler2Quaternion(this.getAngles()));
+            this.smoothedOrientation = new Quaternionf(this.orientation);
+            this.prevSmoothedOrientation = new Quaternionf(this.orientation);
         }
         
         // Handle inputs
@@ -228,30 +224,47 @@ public abstract class AbstractAirplaneEntity extends VehicleEntity {
     }
 
     private void syncVisualRotation() {
-        // Smoothly interpolate visual rotation towards actual rotation
-        // Use lerpAngleDegrees for all rotations to handle 360° wrapping properly
-        this.visualPitch = MathHelper.lerpAngleDegrees(rotationSmoothFactor, this.visualPitch, this.getPitch());
-        this.visualRoll = MathHelper.lerpAngleDegrees(rotationSmoothFactor, this.visualRoll, this.getRoll());
-        this.visualYaw = MathHelper.lerpAngleDegrees(rotationSmoothFactor, this.visualYaw, this.getYaw());
-        
-        // Apply the smoothed visual rotation to the entity's display
-        super.setPitch(this.visualPitch);
-        super.setYaw(this.visualYaw);
-        // Note: Roll is handled in the renderer since Minecraft entities don't natively support roll
+        // Snapshot previous smoothed orientation for sub-tick interpolation
+        this.prevSmoothedOrientation = new Quaternionf(this.smoothedOrientation);
+        // Slerp toward the physics quaternion — avoids Euler discontinuities entirely
+        this.smoothedOrientation.slerp(this.orientation, rotationSmoothFactor);
+
+        // Keep vanilla pitch/yaw in sync so the camera and passenger positioning stay correct
+        float[] angles = MathUtil.quaternion2Euler(this.smoothedOrientation);
+        super.setPitch(angles[1]);
+        super.setYaw(angles[0]);
     }
-    
-    // Add getter for smooth visual roll for the renderer to use
+
+    /** Returns Euler angles [yaw, pitch, roll] from a sub-tick slerp between prev and current smoothed orientation. */
+    private float[] getSmoothedEuler(float tickDelta) {
+        Quaternionf interpolated = new Quaternionf(this.prevSmoothedOrientation).slerp(this.smoothedOrientation, tickDelta);
+        return MathUtil.quaternion2Euler(interpolated);
+    }
+
+    // Tick-accurate getters (used for passenger yaw/pitch sync)
     public float getVisualRoll() {
-        return this.visualRoll;
+        return MathUtil.quaternion2Euler(this.smoothedOrientation)[2];
     }
-    
-    // Add getters for smooth visual pitch and yaw for consistency
+
     public float getVisualPitch() {
-        return this.visualPitch;
+        return MathUtil.quaternion2Euler(this.smoothedOrientation)[1];
     }
-    
+
     public float getVisualYaw() {
-        return this.visualYaw;
+        return MathUtil.quaternion2Euler(this.smoothedOrientation)[0];
+    }
+
+    // Sub-tick interpolated getters for smooth rendering at high framerates
+    public float getVisualRoll(float tickDelta) {
+        return getSmoothedEuler(tickDelta)[2];
+    }
+
+    public float getVisualPitch(float tickDelta) {
+        return getSmoothedEuler(tickDelta)[1];
+    }
+
+    public float getVisualYaw(float tickDelta) {
+        return getSmoothedEuler(tickDelta)[0];
     }
 
     @Override

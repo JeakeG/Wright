@@ -39,10 +39,10 @@ public class MonoplaneRenderer extends EntityRenderer<MonoplaneEntity> {
         matrixStack.translate(0.0F, -1.5F, 0.0F);
 
         // Rotate model to match entity rotation (in proper aircraft order: Yaw, Pitch, Roll)
-        // Use smooth visual rotations for consistent smoothing
-        matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(planeEntity.getVisualYaw()));
-        matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(planeEntity.getVisualPitch()));
-        matrixStack.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(-planeEntity.getVisualRoll()));
+        // Use tickDelta-interpolated visual rotations for sub-tick smoothness at high framerates
+        matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(planeEntity.getVisualYaw(g)));
+        matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(planeEntity.getVisualPitch(g)));
+        matrixStack.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(-planeEntity.getVisualRoll(g)));
 
         // Render the airplane model
         VertexConsumer vertexConsumer = vertexConsumerProvider.getBuffer(this.model.getLayer(this.getTexture(planeEntity)));

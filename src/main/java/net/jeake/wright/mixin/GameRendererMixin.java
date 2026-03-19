@@ -2,6 +2,7 @@ package net.jeake.wright.mixin;
 
 import net.jeake.wright.entity.custom.AbstractAirplaneEntity;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.option.Perspective;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
@@ -23,8 +24,13 @@ public class GameRendererMixin {
         Entity cameraEntity = client.getCameraEntity();
         
         if (cameraEntity != null && cameraEntity.getVehicle() instanceof AbstractAirplaneEntity airplane) {
-            // Apply roll rotation to the camera view
-            float roll = airplane.getVisualRoll();
+            // Apply roll — CameraMixin handles yaw/pitch, but Camera has no roll concept.
+            // In front-facing third person the camera looks backward, so left/right are
+            // swapped — negate roll to keep it visually correct.
+            float roll = airplane.getVisualRoll(tickDelta);
+            if (client.options.getPerspective() == Perspective.THIRD_PERSON_FRONT) {
+                roll = -roll;
+            }
             matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(roll));
         }
     }
