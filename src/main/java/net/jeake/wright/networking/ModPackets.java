@@ -1,7 +1,6 @@
 package net.jeake.wright.networking;
 
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.jeake.wright.networking.packet.PitchC2SPayload;
 import net.jeake.wright.networking.packet.PlaneSyncS2CPayload;
 import net.jeake.wright.networking.packet.RollC2SPayload;

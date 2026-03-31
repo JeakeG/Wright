@@ -18,12 +18,13 @@ public class MathUtil {
         float cr = (float) Math.cos(rollRad * 0.5);
         float sr = (float) Math.sin(rollRad * 0.5);
         
-        // Create quaternion from Euler angles
+        // Create quaternion from Euler angles (roll→X axis, pitch→Z axis, yaw→Y axis,
+        // matching the rotation axes used in handleInputs and quaternion2Euler)
         return new Quaternionf(
-            cr * cp * cy + sr * sp * sy,
-            sr * cp * cy - cr * sp * sy,
-            cr * sp * cy + sr * cp * sy,
-            cr * cp * sy - sr * sp * cy
+            sr * cp * cy - cr * sp * sy,  // x
+            cr * cp * sy - sr * sp * cy,  // y
+            sr * cp * sy + cr * sp * cy,  // z
+            cr * cp * cy + sr * sp * sy   // w
         );
     }
 

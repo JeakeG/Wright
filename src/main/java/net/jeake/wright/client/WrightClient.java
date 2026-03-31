@@ -27,6 +27,8 @@ public class WrightClient implements ClientModInitializer {
         // Register the airplane HUD
         AirplaneHudRenderer.register();
 
+        FlightDebugRenderer.register();
+
         ModPackets.registerS2CPackets();
         ClientPlayNetworking.registerGlobalReceiver(PlaneSyncS2CPayload.ID, WrightClient::onPlaneSync);
     }

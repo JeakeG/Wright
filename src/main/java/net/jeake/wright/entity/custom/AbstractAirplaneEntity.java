@@ -20,7 +20,9 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix3f;
 import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 public abstract class AbstractAirplaneEntity extends VehicleEntity {
 
@@ -46,7 +48,7 @@ public abstract class AbstractAirplaneEntity extends VehicleEntity {
     // Quaternion-based visual smoothing — avoids Euler discontinuities during slerp
     private Quaternionf smoothedOrientation = new Quaternionf();
     private Quaternionf prevSmoothedOrientation = new Quaternionf();
-    private float rotationSmoothFactor = 0.2f; // How fast visual rotation catches up
+    private float rotationSmoothFactor = 0.2f;
 
     float throttle;
     float THROTTLE_INCREMENT = 0.05F;
@@ -58,7 +60,6 @@ public abstract class AbstractAirplaneEntity extends VehicleEntity {
     float PITCH_INCREMENT = 4.0F; // degrees per tick
     float ROLL_INCREMENT = 5.0F;  // degrees per tick
     float YAW_INCREMENT = 3.0F;   // degrees per tick
-    // Removed MAX_PITCH and MAX_ROLL for unlimited aerobatic freedom
 
     int BASE_WEIGHT;
     final int MAX_PASSENGERS = 1;
@@ -241,6 +242,11 @@ public abstract class AbstractAirplaneEntity extends VehicleEntity {
         return MathUtil.quaternion2Euler(interpolated);
     }
 
+    /** Returns the sub-tick interpolated smoothed orientation quaternion directly, without Euler extraction. */
+    public Quaternionf getSmoothedOrientation(float tickDelta) {
+        return new Quaternionf(this.prevSmoothedOrientation).slerp(this.smoothedOrientation, tickDelta);
+    }
+
     // Tick-accurate getters (used for passenger yaw/pitch sync)
     public float getVisualRoll() {
         return MathUtil.quaternion2Euler(this.smoothedOrientation)[2];
@@ -265,6 +271,109 @@ public abstract class AbstractAirplaneEntity extends VehicleEntity {
 
     public float getVisualYaw(float tickDelta) {
         return getSmoothedEuler(tickDelta)[0];
+    }
+
+    /**
+     * Returns the aircraft's local lift axis in world space using visual (interpolated) rotation.
+     * This matches the renderer's yaw/pitch/roll composition so debug vectors and visuals align.
+     */
+    public Vec3d getLiftVector(float tickDelta) {
+        return this.computeLiftVector(
+            this.getVisualYaw(tickDelta),
+            this.getVisualPitch(tickDelta),
+            this.getVisualRoll(tickDelta)
+        );
+    }
+
+    /**
+     * Returns the aircraft's local lift axis in world space from the current physics orientation.
+     * Use this overload for simulation/tick logic where sub-tick interpolation is not needed.
+     */
+    public Vec3d getLiftVector() {
+        float[] angles = MathUtil.quaternion2Euler(this.orientation);
+        return this.computeLiftVector(angles[0], angles[1], angles[2]);
+    }
+
+    /**
+     * Returns the aircraft's local forward axis in world space using visual (interpolated) rotation.
+     * Useful for render-time debug vectors and effects that should match visual orientation.
+     */
+    public Vec3d getThrustVector(float tickDelta) {
+        return this.computeThrustVector(
+            this.getVisualYaw(tickDelta),
+            this.getVisualPitch(tickDelta),
+            this.getVisualRoll(tickDelta)
+        );
+    }
+
+    /**
+     * Returns the aircraft's local forward axis in world space from current physics orientation.
+     * Use this overload for simulation/tick logic where sub-tick interpolation is not needed.
+     */
+    public Vec3d getThrustVector() {
+        float[] angles = MathUtil.quaternion2Euler(this.orientation);
+        return this.computeThrustVector(angles[0], angles[1], angles[2]);
+    }
+
+    /**
+     * Returns the aircraft's local drag axis in world space using visual (interpolated) rotation.
+     * Drag points opposite the aircraft forward axis.
+     */
+    public Vec3d getDragVector(float tickDelta) {
+        return this.computeDragVector(
+            this.getVisualYaw(tickDelta),
+            this.getVisualPitch(tickDelta),
+            this.getVisualRoll(tickDelta)
+        );
+    }
+
+    /**
+     * Returns the aircraft's local drag axis in world space from current physics orientation.
+     * Use this overload for simulation/tick logic where sub-tick interpolation is not needed.
+     */
+    public Vec3d getDragVector() {
+        float[] angles = MathUtil.quaternion2Euler(this.orientation);
+        return this.computeDragVector(angles[0], angles[1], angles[2]);
+    }
+
+    private Vec3d computeLiftVector(float yaw, float pitch, float roll) {
+        // Mirror the exact transform sequence used by rendering:
+        // scale(1,-1,-1) -> yaw(Y) -> pitch(X) -> roll(Z, negated), then transform local -Y.
+        Matrix3f transform = new Matrix3f()
+            .identity()
+            .scale(1.0F, -1.0F, -1.0F)
+            .rotateY((float) Math.toRadians(yaw))
+            .rotateX((float) Math.toRadians(pitch))
+            .rotateZ((float) Math.toRadians(-roll));
+
+        Vector3f lift = transform.transform(new Vector3f(0.0F, -1.0F, 0.0F)).normalize();
+        return new Vec3d(lift.x, lift.y, lift.z);
+    }
+
+    private Vec3d computeThrustVector(float yaw, float pitch, float roll) {
+        // Same transform chain as computeLiftVector; local -Z is aircraft forward in model space.
+        Matrix3f transform = new Matrix3f()
+            .identity()
+            .scale(1.0F, -1.0F, -1.0F)
+            .rotateY((float) Math.toRadians(yaw))
+            .rotateX((float) Math.toRadians(pitch))
+            .rotateZ((float) Math.toRadians(-roll));
+
+        Vector3f thrust = transform.transform(new Vector3f(0.0F, 0.0F, -1.0F)).normalize();
+        return new Vec3d(thrust.x, thrust.y, thrust.z);
+    }
+
+    private Vec3d computeDragVector(float yaw, float pitch, float roll) {
+        // Same transform chain as computeThrustVector; local +Z is opposite aircraft forward.
+        Matrix3f transform = new Matrix3f()
+            .identity()
+            .scale(1.0F, -1.0F, -1.0F)
+            .rotateY((float) Math.toRadians(yaw))
+            .rotateX((float) Math.toRadians(pitch))
+            .rotateZ((float) Math.toRadians(-roll));
+
+        Vector3f drag = transform.transform(new Vector3f(0.0F, 0.0F, 1.0F)).normalize();
+        return new Vec3d(drag.x, drag.y, drag.z);
     }
 
     @Override
@@ -394,7 +503,7 @@ public abstract class AbstractAirplaneEntity extends VehicleEntity {
     }
 
     private float[] getAngles() {
-        return new float[]{this.getYaw(), this.getPitch(), this.getRoll()};
+        return new float[]{this.getPitch(), this.getYaw(), this.getRoll()};
     }
 
 }
